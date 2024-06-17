@@ -1,29 +1,23 @@
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedLists #-}
 module LambdaChess
-  ( Piece(..)
-  , PieceType(..)
-  , Color(..)
-  , Square(..)
+  ( Square
   , Coord(..)
+  , HasSquare(..)
+  , Piece(..)
+  , Player(..)
   , Board
-  , standardBoard
+  , ChessBoard
   ) where
 
-import Data.Map qualified as Map
-import Data.Map (Map)
+import Control.Comonad.Store
+import Control.Lens
 
-type Board = Map Square Piece
-data Square = Square {-# UNPACK #-} !Coord !Coord
+import Data.Vector (Vector)
+import Data.Vector qualified as V
+
+data Square = Square { _rank :: Coord, _file :: Coord }
   deriving (Eq, Ord)
-
-data Piece = Piece PieceType Color
-
-data PieceType
-  = King
-  | Queen
-  | Rook
-  | Bishop
-  | Knight
-  | Pawn
 
 data Coord
   = A | B
@@ -32,21 +26,32 @@ data Coord
   | G | H
   deriving (Eq, Ord, Enum)
 
-data Color = White | Black
+data Player = White | Black
 
-standardBoard :: Board
-standardBoard = Map.fromList
-  $  standardPlacement White A
-  ++ pawnRow White B
-  ++ standardPlacement Black H
-  ++ pawnRow Black G
+data Piece
+  = Queen Player
+  | King Player
+  | Rook Player
+  | Bishop Player
+  | Knight Player
+  | Pawn Player
 
-standardPlacement :: Color -> Coord -> [(Square, Piece)]
-standardPlacement col coord = zip coordinates pieces
-  where coordinates = map (Square coord) (enumFrom A)
+data Board a = Board Square (Vector (Vector a))
+  deriving Functor
 
-        pieces = map (`Piece` col) (leftPieces ++ [Queen, King] ++ reverse leftPieces)
-        leftPieces = [Rook, Knight, Bishop]
+type ChessBoard = Board (Maybe Piece)
 
-pawnRow :: Color -> Coord -> [(Square, Piece)]
-pawnRow c coord = map ((, Piece Pawn c) . Square coord) (enumFrom A)
+makeClassy ''Square
+
+instance Comonad Board where
+  extract (Board s board) = board V.! fromEnum (s^.rank) V.! fromEnum (s^.file)
+
+  extend f (Board position board) = Board position $ do
+    rk <- [A ..]
+    pure $ do
+      fl <- [A ..]
+      pure $ f (Board (Square rk fl) board)
+
+instance ComonadStore Square Board where
+  pos (Board s _) = s
+  peek s (Board _ board) = extract (Board s board)
