@@ -2,14 +2,14 @@
 {-# LANGUAGE OverloadedLists #-}
 module Board
   ( Board
-  , ChessBoard
+  , Chessboard
   , Coord(..)
-  , Square
+  , Square(..)
   , HasSquare(..)
   , Piece(..)
   , Player(..)
   , piece
-  , standardChess
+  , standardChessboard
   ) where
 
 import Control.Comonad.Store
@@ -43,7 +43,7 @@ data Piece
   | Knight Player
   | Pawn Player
 
-type ChessBoard = Board (Maybe Piece)
+type Chessboard = Board (Maybe Piece)
 
 makeClassy ''Square
 
@@ -86,5 +86,19 @@ piece = lens extract \(Board s board) a -> Board s
   where rk s = fromEnum (s^.rank)
         fl s = fromEnum (s^.file)
 
-standardChess :: ChessBoard
-standardChess = pure Nothing
+standardChessboard :: Chessboard
+standardChessboard = extend pieces . extend pawns $ pure Nothing
+  where pieces board = case pos board of
+            (Square A fl) -> Just $ pieceList White !! fromEnum fl
+            (Square H fl) -> Just $ pieceList Black !! fromEnum fl
+            _ -> view piece board
+
+        pawns board = case pos board of
+            (Square B _) -> Just (Pawn White)
+            (Square G _) -> Just (Pawn Black)
+            _ -> view piece board
+
+        pieceList col = map ($ col) [ Rook, Knight, Bishop
+                                    , Queen, King
+                                    , Bishop, Knight, Rook
+                                    ]
