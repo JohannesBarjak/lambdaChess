@@ -50,11 +50,12 @@ makeClassy ''Square
 instance Comonad Board where
   extract (Board s board) = board V.! fromEnum (s^.rank) V.! fromEnum (s^.file)
 
-  extend f (Board position board) = Board position $ do
-    rk <- [A ..]
-    pure $ do
-      fl <- [A ..]
-      pure $ f (Board (Square rk fl) board)
+  extend f (Board position board)
+    = Board position do
+      rk <- [A ..]
+      pure $ do
+        fl <- [A ..]
+        pure $ f (Board (Square rk fl) board)
 
 instance ComonadStore Square Board where
   pos (Board s _) = s
@@ -79,12 +80,11 @@ instance HasSquare (Board a) where
   square = lens pos (flip seek)
 
 piece :: Lens' (Board a) a
-piece = lens extract
-    $ \(Board s board) a -> Board s
+piece = lens extract \(Board s board) a -> Board s
     $ board&singular (ix $ rk s).singular (ix $ fl s) .~ a
 
   where rk s = fromEnum (s^.rank)
         fl s = fromEnum (s^.file)
 
 standardChess :: ChessBoard
-standardChess = undefined
+standardChess = pure Nothing

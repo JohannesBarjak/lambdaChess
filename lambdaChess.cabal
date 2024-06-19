@@ -79,6 +79,7 @@ library
 
     -- Base language which the package is written in.
     default-language: GHC2021
+    default-extensions: BlockArguments
 
 executable lambdaChess
     -- Import common warning flags.
@@ -106,6 +107,7 @@ executable lambdaChess
 
     -- Base language which the package is written in.
     default-language: GHC2021
+    default-extensions: BlockArguments
 
     -- Brick requuires threaded rts to compile
     ghc-options: -threaded
@@ -116,6 +118,7 @@ test-suite lambdaChess-test
 
     -- Base language which the package is written in.
     default-language: GHC2021
+    default-extensions: BlockArguments
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
