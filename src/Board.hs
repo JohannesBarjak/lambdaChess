@@ -53,7 +53,7 @@ instance Comonad Board where
   extend f (Board position board)
     = Board position do
       rk <- [A ..]
-      pure $ do
+      pure do
         fl <- [A ..]
         pure $ f (Board (Square rk fl) board)
 
