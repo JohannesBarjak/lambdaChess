@@ -9,6 +9,7 @@ module Board
   , Piece(..)
   , Player(..)
   , piece
+  , toGrid
   , standardChessboard
   ) where
 
@@ -85,6 +86,14 @@ piece = lens extract \(Board s board) a -> Board s
 
   where rk s = fromEnum (s^.rank)
         fl s = fromEnum (s^.file)
+
+toGrid :: Board a -> [[a]]
+toGrid board = do
+  rk <- [A ..]
+
+  pure do
+    fl <- [A ..]
+    pure $ peek (Square rk fl) board
 
 standardChessboard :: Chessboard
 standardChessboard = extend pieces . extend pawns $ pure Nothing
