@@ -97,6 +97,7 @@ executable lambdaChess
     -- Other library packages from which modules are imported.
     build-depends: base ^>=4.19.1.0
                  , brick^>=2.3.1
+                 , vty^>=6.2
                  , containers^>=0.6.8
                  , lens^>=5.3.2
                  , comonad^>=5.0.8

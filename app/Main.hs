@@ -1,35 +1,51 @@
 module Main where
 
 import Board
-
 import Brick
-import Brick.Widgets.Table
+
 import Brick.Widgets.Center
+import Brick.Widgets.Table
 
-import Control.Comonad.Store
-import Control.Monad (forM_)
+import Control.Monad (void)
+import Graphics.Vty (defAttr)
 
-data Game = Game {}
+data ChessGame = ChessGame { board :: Chessboard }
 
-newGame :: Game
-newGame = undefined
+newGame :: ChessGame
+newGame = ChessGame { board = standardChessboard }
 
 ui :: String -> Widget ()
 ui = str
 
 main :: IO ()
-main = do
-  simpleMain $ hCenter $ renderTable $ table $ map (map (padLeftRight 1)) (boardToWidgets standardChessboard)
+main = void $ defaultMain initialApp newGame
 
-boardToWidgets :: Chessboard -> [[Widget ()]]
-boardToWidgets board = toGrid $ fmap toWidget board
-  where toWidget (Just (Pawn   _)) = pawnWidget
-        toWidget (Just (Queen  _)) = queenWidget
-        toWidget (Just (King   _)) = kingWidget
-        toWidget (Just (Rook   _)) = rookWidget
-        toWidget (Just (Bishop _)) = bishopWidget
-        toWidget (Just (Knight _)) = knightWidget
-        toWidget Nothing = emptyCell
+initialApp :: App ChessGame e ()
+initialApp = App
+  { appDraw = draw
+  , appChooseCursor = neverShowCursor
+  , appHandleEvent = handleEvent
+  , appStartEvent = pure ()
+  , appAttrMap = const $ attrMap defAttr []
+  }
+
+draw :: ChessGame -> [Widget n]
+draw (ChessGame g) = [hCenter $ renderWidgetBoard $ padLeftRight 1 <$> widgetBoard g]
+
+renderWidgetBoard :: Board (Widget n) -> Widget n
+renderWidgetBoard = renderTable . table . toGrid
+
+handleEvent :: BrickEvent n e -> EventM n ChessGame ()
+handleEvent _ = continueWithoutRedraw
+
+widgetBoard :: Chessboard -> Board (Widget n)
+widgetBoard = fmap (maybe emptyCell toWidget)
+  where toWidget (Pawn   _) = pawnWidget
+        toWidget (Queen  _) = queenWidget
+        toWidget (King   _) = kingWidget
+        toWidget (Rook   _) = rookWidget
+        toWidget (Bishop _) = bishopWidget
+        toWidget (Knight _) = knightWidget
 
 queenWidget :: Widget n
 queenWidget = vBox $ map str
