@@ -8,14 +8,15 @@ module Board
   , HasSquare(..)
   , Piece(..)
   , Player(..)
-  , piece
+  , PlayerPiece(..)
+  , bdSel
   , toGrid
   , standardChessboard
+  , sqUp, sqDown, sqLeft, sqRight
   ) where
 
 import Control.Comonad.Store
 import Control.Lens
-import Data.Bool (bool)
 
 import Data.Function (on)
 import Data.Vector (Vector)
@@ -36,15 +37,20 @@ data Coord
 
 data Player = White | Black
 
-data Piece
-  = Queen Player
-  | King Player
-  | Rook Player
-  | Bishop Player
-  | Knight Player
-  | Pawn Player
+data PlayerPiece = Piece
+  { piece :: Piece
+  , col :: Player
+  }
 
-type Chessboard = Board (Maybe Piece)
+data Piece
+  = Queen
+  | King
+  | Rook
+  | Bishop
+  | Knight
+  | Pawn
+
+type Chessboard = Board (Maybe PlayerPiece)
 
 makeClassy ''Square
 
@@ -68,9 +74,7 @@ instance Applicative Board where
   (Board pos1 fboard) <*> (Board pos2 board)
     = Board truncPosSum $ V.zipWith (V.zipWith ($)) fboard board
 
-    where truncPosSum
-            = let overflowCheck a = bool (toEnum a) maxBound (a > fromEnum (maxBound @Coord)) in
-                Square (overflowCheck rk) (overflowCheck fl)
+    where truncPosSum = Square (boundedMove rk) (boundedMove fl)
 
               where rk = on (+) fromEnum (pos1^.rank) (pos2^.rank)
                     fl = on (+) fromEnum (pos1^.file) (pos2^.file)
@@ -80,8 +84,20 @@ instance ComonadApply Board
 instance HasSquare (Board a) where
   square = lens pos (flip seek)
 
-piece :: Lens' (Board a) a
-piece = lens extract \(Board s board) a -> Board s
+sqUp, sqDown, sqLeft, sqRight :: Square -> Square
+sqUp    s = s&rank %~ boundedMove . (+1) . fromEnum
+sqDown  s = s&rank %~ boundedMove . subtract 1 . fromEnum
+sqLeft  s = s&file %~ boundedMove . subtract 1 . fromEnum
+sqRight s = s&file %~ boundedMove . (+1) . fromEnum
+
+boundedMove :: Int -> Coord
+boundedMove c
+  | c > fromEnum (maxBound @Coord) = maxBound
+  | c < fromEnum (minBound @Coord) = minBound
+  | otherwise = toEnum c
+
+bdSel :: Lens' (Board a) a
+bdSel = lens extract \(Board s board) a -> Board s
     $ board&singular (ix $ rk s).singular (ix $ fl s) .~ a
 
   where rk s = fromEnum (s^.rank)
@@ -100,14 +116,16 @@ standardChessboard = extend pieces . extend pawns $ pure Nothing
   where pieces board = case pos board of
             (Square A fl) -> Just $ pieceList White !! fromEnum fl
             (Square H fl) -> Just $ pieceList Black !! fromEnum fl
-            _ -> view piece board
+            _ -> view bdSel board
 
         pawns board = case pos board of
-            (Square B _) -> Just (Pawn White)
-            (Square G _) -> Just (Pawn Black)
-            _ -> view piece board
+            (Square B _) -> Just (Piece Pawn White)
+            (Square G _) -> Just (Piece Pawn Black)
+            _ -> view bdSel board
 
-        pieceList col = map ($ col) [ Rook, Knight, Bishop
-                                    , Queen, King
-                                    , Bishop, Knight, Rook
-                                    ]
+        pieceList col
+          = map (`Piece` col)
+            [ Rook, Knight, Bishop
+            , Queen, King
+            , Bishop, Knight, Rook
+            ]

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 module Main where
 
 import Board
@@ -6,19 +7,23 @@ import Brick
 import Brick.Widgets.Center
 import Brick.Widgets.Table
 
-import Control.Monad (void)
-import Graphics.Vty (defAttr)
+import Control.Comonad.Store
+import Control.Lens
 
-data ChessGame = ChessGame { board :: Chessboard }
+import Control.Monad (void)
+import Data.Char (toLower)
+import Graphics.Vty
+
+data ChessGame = ChessGame
+  { cursor :: Square
+  , board :: Chessboard
+  }
 
 newGame :: ChessGame
-newGame = ChessGame { board = standardChessboard }
-
-ui :: String -> Widget ()
-ui = str
-
-main :: IO ()
-main = void $ defaultMain initialApp newGame
+newGame = ChessGame
+  { cursor = Square A A
+  , board = standardChessboard
+  }
 
 initialApp :: App ChessGame e ()
 initialApp = App
@@ -26,26 +31,75 @@ initialApp = App
   , appChooseCursor = neverShowCursor
   , appHandleEvent = handleEvent
   , appStartEvent = pure ()
-  , appAttrMap = const $ attrMap defAttr []
+  , appAttrMap = chessAttrMap
   }
 
+main :: IO ()
+main = void $ defaultMain initialApp newGame
+
 draw :: ChessGame -> [Widget n]
-draw (ChessGame g) = [hCenter $ renderWidgetBoard $ padLeftRight 1 <$> widgetBoard g]
+draw gameState =
+  [ vCenter . hCenter
+  $ renderWidgetBoard
+  $ highlightSelected gameState.cursor
+  $ widgetBoard gameState.board
+  ]
 
 renderWidgetBoard :: Board (Widget n) -> Widget n
-renderWidgetBoard = renderTable . table . toGrid
+renderWidgetBoard = renderTable . table . reverse . toGrid
 
 handleEvent :: BrickEvent n e -> EventM n ChessGame ()
-handleEvent _ = continueWithoutRedraw
+handleEvent e = case e of
+  (VtyEvent (EvKey key _)) -> case key of
+    KChar c | toLower c == 'q' -> halt
+    KUp -> do modify \gs -> gs{cursor = sqUp gs.cursor}
+    KDown -> modify \gs -> gs{cursor = sqDown gs.cursor}
+    KLeft -> modify \gs -> gs{cursor = sqLeft gs.cursor}
+    KRight -> modify \gs -> gs{cursor = sqRight gs.cursor}
+    _ -> continueWithoutRedraw
+  _ -> continueWithoutRedraw
+
+highlightSelected :: Square -> Board (Widget n) -> Board (Widget n)
+highlightSelected cur board = seek cur board&bdSel %~ forceAttr selectedAttr
 
 widgetBoard :: Chessboard -> Board (Widget n)
-widgetBoard = fmap (maybe emptyCell toWidget)
-  where toWidget (Pawn   _) = pawnWidget
-        toWidget (Queen  _) = queenWidget
-        toWidget (King   _) = kingWidget
-        toWidget (Rook   _) = rookWidget
-        toWidget (Bishop _) = bishopWidget
-        toWidget (Knight _) = knightWidget
+widgetBoard = fmap
+  $   maybe id (colorAttr . col)
+  <*> padLeftRight 1 . maybe emptyCell (toWidget . piece)
+
+  where toWidget Pawn   = pawnWidget
+        toWidget Queen  = queenWidget
+        toWidget King   = kingWidget
+        toWidget Rook   = rookWidget
+        toWidget Bishop = bishopWidget
+        toWidget Knight = knightWidget
+
+        colorAttr Black = withAttr blackPieceAttr
+        colorAttr White = withAttr whitePieceAttr
+
+chessAttrMap :: ChessGame -> AttrMap
+chessAttrMap = const $ attrMap defAttr
+  [ (selectedAttr, bg $ rgbColor @Integer 140 140 140)
+  , (whitePieceAttr, fg white)
+  , (blackPieceAttr, fg black)
+  , (blackTileAttr, bg black)
+  , (whiteTileAttr, bg white)
+  ]
+
+selectedAttr :: AttrName
+selectedAttr = attrName "selected"
+
+whitePieceAttr :: AttrName
+whitePieceAttr = attrName "whitePiece"
+
+blackPieceAttr :: AttrName
+blackPieceAttr = attrName "blackPiece"
+
+whiteTileAttr :: AttrName
+whiteTileAttr = attrName "whiteTile"
+
+blackTileAttr :: AttrName
+blackTileAttr = attrName "blackAttr"
 
 queenWidget :: Widget n
 queenWidget = vBox $ map str
