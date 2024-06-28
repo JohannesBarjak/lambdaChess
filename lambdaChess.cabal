@@ -59,7 +59,7 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  LambdaChess Board
+    exposed-modules:  LambdaChess LambdaChess.Board
 
     -- Modules included in this library but not exported.
     -- other-modules:

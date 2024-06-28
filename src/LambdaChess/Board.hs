@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedLists #-}
-module Board
+module LambdaChess.Board
   ( Board
   , Chessboard
   , Coord(..)

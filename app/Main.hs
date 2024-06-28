@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
-import Board
+import LambdaChess.Board
 import Brick
 
 import Brick.Widgets.Center
