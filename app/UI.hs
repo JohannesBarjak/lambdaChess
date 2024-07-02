@@ -8,10 +8,12 @@ import Brick.Widgets.Table
 
 import Control.Comonad.Store
 import Control.Lens
+import Control.Monad
 
 import Data.Char (toLower)
 import Graphics.Vty
 
+import LambdaChess
 import LambdaChess.Board
 
 data ChessGame = ChessGame
@@ -66,15 +68,21 @@ handleEvent = \case
     KEnter -> do
       use selectedPos >>= \case
         Nothing -> do
-          gState <- get
-          case peek (gState^.cursor) (gState^.board) of
-            Just  _ -> selectedPos <~ Just <$> use cursor
+          bd <- use board
+          cur <- use cursor
+
+          case peek cur bd of
+            Just  _ -> unless (null $ getMove <$> moves (seek cur bd)) do
+              selectedPos <~ Just <$> use cursor
             Nothing -> continueWithoutRedraw
 
         Just sel -> do
           cur <- use cursor
-          board %= movePiece sel cur
-          selectedPos .= Nothing
+          bd <- use board
+
+          when (elem cur $ getMove <$> moves (seek sel bd)) $ do
+            board %= movePiece sel cur
+            selectedPos .= Nothing
 
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
