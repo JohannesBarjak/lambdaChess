@@ -22,7 +22,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as V
 
 data Board a = Board Square (Vector (Vector a))
-  deriving Functor
+  deriving (Functor, Foldable, Traversable)
 
 data Square = Square { _rank :: Coord, _file :: Coord }
   deriving (Eq, Ord)
