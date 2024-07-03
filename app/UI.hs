@@ -10,6 +10,7 @@ import Control.Comonad.Store
 import Control.Lens
 import Control.Monad
 
+import Data.Foldable (for_)
 import Data.Char (toLower)
 import Graphics.Vty
 
@@ -74,20 +75,13 @@ handleEvent = \case
             board %= move cur
             selected .= False
 
-        else do
-          case peek cur bd of
-            Just  _ ->
+        else for_ (peek cur bd) . const $
               unless (null $ moves (seek cur bd)) do
                 board %= seek cur
                 selected .= True
 
-            Nothing -> continueWithoutRedraw
-
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
-
-movePiece :: Square -> Square -> Chessboard -> Chessboard
-movePiece start end bd = seek end bd&bdSel .~ peek start bd&seek start&bdSel .~ Nothing
 
 highlightSelected :: Square -> Board (Widget n) -> Board (Widget n)
 highlightSelected cur bd = seek cur bd&bdSel %~ withAttr selectedAttr
