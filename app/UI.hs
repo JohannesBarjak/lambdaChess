@@ -19,7 +19,7 @@ import LambdaChess.Board
 data ChessGame = ChessGame
   { _cursor :: Square
   , _board :: Chessboard
-  , _selectedPos :: Maybe Square
+  , _selected :: Bool
   }
 
 makeLenses ''ChessGame
@@ -28,7 +28,7 @@ newGame :: ChessGame
 newGame = ChessGame
   { _cursor = Square A A
   , _board = standardChessboard
-  , _selectedPos = Nothing
+  , _selected = False
   }
 
 initialApp :: App ChessGame e ()
@@ -66,23 +66,22 @@ handleEvent = \case
     KRight -> cursor %= sqRight
 
     KEnter -> do
-      use selectedPos >>= \case
-        Nothing -> do
-          bd <- use board
-          cur <- use cursor
+      sel <- use selected
+      cur <- use cursor
+      bd <- use board
 
+      if sel then when (cur `elem` moves bd) do
+            board %= move cur
+            selected .= False
+
+        else do
           case peek cur bd of
-            Just  _ -> unless (null $ getMove <$> moves (seek cur bd)) do
-              selectedPos <~ Just <$> use cursor
+            Just  _ ->
+              unless (null $ moves (seek cur bd)) do
+                board %= seek cur
+                selected .= True
+
             Nothing -> continueWithoutRedraw
-
-        Just sel -> do
-          cur <- use cursor
-          bd <- use board
-
-          when (elem cur $ getMove <$> moves (seek sel bd)) $ do
-            board %= movePiece sel cur
-            selectedPos .= Nothing
 
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
