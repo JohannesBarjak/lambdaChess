@@ -18,7 +18,6 @@ module LambdaChess.Board
 import Control.Comonad.Store
 import Control.Lens
 
-import Data.Function (on)
 import Data.Vector (Vector)
 import Data.Vector qualified as V
 
@@ -68,19 +67,6 @@ instance ComonadStore Square Board where
   pos (Board s _) = s
   peek s (Board _ board) = extract (Board s board)
 
-instance Applicative Board where
-  pure x = Board (Square A A) (V.replicate 8 $ V.replicate 8 x)
-
-  (Board pos1 fboard) <*> (Board pos2 board)
-    = Board truncPosSum $ V.zipWith (V.zipWith ($)) fboard board
-
-    where truncPosSum = Square (boundedMove rk) (boundedMove fl)
-
-              where rk = on (+) fromEnum (pos1^.rank) (pos2^.rank)
-                    fl = on (+) fromEnum (pos1^.file) (pos2^.file)
-
-instance ComonadApply Board
-
 instance HasSquare (Board a) where
   square = lens pos (flip seek)
 
@@ -111,8 +97,11 @@ toGrid board = do
     fl <- [A ..]
     pure $ peek (Square rk fl) board
 
+emptyChessboard :: Chessboard
+emptyChessboard = Board (Square A A) (V.replicate 8 $ V.replicate 8 Nothing)
+
 standardChessboard :: Chessboard
-standardChessboard = extend pieces . extend pawns $ pure Nothing
+standardChessboard = extend pieces . extend pawns $ emptyChessboard
   where pieces board = case pos board of
             (Square A fl) -> Just $ pieceList White !! fromEnum fl
             (Square H fl) -> Just $ pieceList Black !! fromEnum fl
