@@ -61,10 +61,10 @@ handleEvent = \case
   (VtyEvent (EvKey key _)) -> case key of
     KChar c | toLower c == 'q' -> halt
 
-    KUp -> cursor %= sqUp
-    KDown -> cursor %= sqDown
-    KLeft -> cursor %= sqLeft
-    KRight -> cursor %= sqRight
+    KUp -> maybe (pure ()) (cursor .=) . sqUp =<< use cursor
+    KDown -> maybe (pure ()) (cursor .=) . sqDown =<< use cursor
+    KLeft -> maybe (pure ()) (cursor .=) . sqLeft =<< use cursor
+    KRight -> maybe (pure ()) (cursor .=) . sqRight =<< use cursor
 
     KEnter -> do
       sel <- use selected

@@ -70,17 +70,17 @@ instance ComonadStore Square Board where
 instance HasSquare (Board a) where
   square = lens pos (flip seek)
 
-sqUp, sqDown, sqLeft, sqRight :: Square -> Square
-sqUp    s = s&rank %~ boundedMove . (+1) . fromEnum
-sqDown  s = s&rank %~ boundedMove . subtract 1 . fromEnum
-sqLeft  s = s&file %~ boundedMove . subtract 1 . fromEnum
-sqRight s = s&file %~ boundedMove . (+1) . fromEnum
+sqUp, sqDown, sqLeft, sqRight :: Square -> Maybe Square
+sqUp    s = s&rank %%~ move . (+1) . fromEnum
+sqDown  s = s&rank %%~ move . subtract 1 . fromEnum
+sqLeft  s = s&file %%~ move . subtract 1 . fromEnum
+sqRight s = s&file %%~ move . (+1) . fromEnum
 
-boundedMove :: Int -> Coord
-boundedMove c
-  | c > fromEnum (maxBound @Coord) = maxBound
-  | c < fromEnum (minBound @Coord) = minBound
-  | otherwise = toEnum c
+move :: Int -> Maybe Coord
+move c
+  | c > fromEnum (maxBound @Coord) = Nothing
+  | c < fromEnum (minBound @Coord) = Nothing
+  | otherwise = Just $ toEnum c
 
 bdSel :: Lens' (Board a) a
 bdSel = lens extract \(Board s board) a -> Board s
