@@ -9,9 +9,11 @@ import Brick.Widgets.Table
 import Control.Comonad.Store
 import Control.Lens
 import Control.Monad
+import Control.Arrow ((>>>))
 
-import Data.Foldable (for_)
 import Data.Char (toLower)
+import Data.Foldable (for_)
+
 import Graphics.Vty
 
 import LambdaChess
@@ -42,12 +44,13 @@ initialApp = App
   }
 
 draw :: ChessGame -> [Widget n]
-draw gameState =
+draw gState =
   [ vCenter . hCenter
   $ renderWidgetBoard
-  $ highlightSelected (gameState^.cursor)
+  $ highlightSelected (gState^.selected) (moves $ gState^.board)
+  $ highlightCursor (gState^.cursor)
   $ colorCells
-  $ widgetBoard (gameState^.board)
+  $ widgetBoard (gState^.board)
   ]
 
 renderWidgetBoard :: Board (Widget n) -> Widget n
@@ -83,8 +86,13 @@ handleEvent = \case
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
 
-highlightSelected :: Square -> Board (Widget n) -> Board (Widget n)
-highlightSelected cur bd = seek cur bd&bdSel %~ withAttr selectedAttr
+highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
+highlightCursor cur bd = seek cur bd&bdSel %~ withAttr selectedAttr
+
+highlightSelected :: Bool -> [Square] -> Board (Widget n) -> Board (Widget n)
+highlightSelected False _  bd = bd
+highlightSelected True  ms bd =  foldr (\m -> seek m >>> bdSel %~ selectionColor >>> seek =<< pos) bd ms
+  where selectionColor = withAttr selectedAttr
 
 colorCells :: Board (Widget n) -> Board (Widget n)
 colorCells = extend colorSelected
