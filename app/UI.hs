@@ -87,19 +87,20 @@ handleEvent = \case
   _ -> continueWithoutRedraw
 
 highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
-highlightCursor cur bd = seek cur bd&bdSel %~ withAttr selectedAttr
+highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
 
 highlightSelected :: Bool -> [Square] -> Board (Widget n) -> Board (Widget n)
 highlightSelected False _  bd = bd
-highlightSelected True  ms bd =  foldr (\m -> seek m >>> bdSel %~ selectionColor >>> seek =<< pos) bd ms
-  where selectionColor = withAttr selectedAttr
+highlightSelected True  ms bd
+  = foldr (((bdSel %~ withAttr selectedAttr) .) . seek) bd ms
+  & seek (pos bd)
 
 colorCells :: Board (Widget n) -> Board (Widget n)
 colorCells = extend colorSelected
 
   where colorSelected bd
-          | even squareSum = modifyDefAttr (`withBackColor` rgbColor @Integer 135 46 46) (extract bd)
-          | otherwise = modifyDefAttr (`withBackColor` rgbColor @Integer 234 187 162) (extract bd)
+          | even squareSum = modifyDefAttr (`withBackColor` rgbColor @Integer 80 80 80) (extract bd)
+          | otherwise = modifyDefAttr (`withBackColor` rgbColor @Integer 210 210 210) (extract bd)
 
           where squareSum = fromEnum (bd^.square.file) + fromEnum (bd^.square.rank)
 
@@ -115,16 +116,18 @@ widgetBoard = fmap
         toWidget Bishop = bishopWidget
         toWidget Knight = knightWidget
 
-        colorWidget White = modifyDefAttr (flip withStyle bold . (`withForeColor` rgbColor @Integer 235 219 178))
-        colorWidget Black = modifyDefAttr (flip withStyle bold . (`withForeColor` rgbColor @Integer 29 32 33))
+        colorWidget White = modifyDefAttr (flip withStyle bold . (`withForeColor` rgbColor @Integer 255 255 255))
+        colorWidget Black = modifyDefAttr (flip withStyle bold . (`withForeColor` rgbColor @Integer 0 0 0))
 
 chessAttrMap :: ChessGame -> AttrMap
 chessAttrMap = const $ attrMap defAttr
-  [ (selectedAttr, bg $ rgbColor @Integer 146 131 116)
+  [ (selectedAttr, bg $ rgbColor @Integer 170 170 170)
+  , (cursorAttr, bg $ rgbColor @Integer 120 120 120)
   ]
 
-selectedAttr :: AttrName
+cursorAttr, selectedAttr :: AttrName
 selectedAttr = attrName "selected"
+cursorAttr = attrName "cursor"
 
 queenWidget :: Widget n
 queenWidget = vBox $ map str
