@@ -21,6 +21,8 @@ moves bd = flip (maybe []) (extract bd) \case
   (Piece Pawn Black) -> catMaybes [sqDown (pos bd)]
   (Piece Bishop   _) -> concat . mapM boardLine bishopMoves $ pos bd
   (Piece Rook     _) -> concat . mapM boardLine rookMoves $ pos bd
+  (Piece Queen    _) -> concat . mapM boardLine (rookMoves <> bishopMoves) $ pos bd
+  (Piece King     _) -> catMaybes $ sequence rookMoves <> sequence bishopMoves $ pos bd
   _ -> []
 
   where boardLine f = unfoldr (fmap (join (,)) . f)
