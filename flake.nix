@@ -5,7 +5,7 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
     pkgName = "lambdaChess";
-    haskPkgs = pkgs.haskell.packages.ghc982;
+    haskPkgs = pkgs.haskell.packages.ghc96;
 
   in {
     packages.${system}.${pkgName} = haskPkgs.developPackage { root  = ./.; };
