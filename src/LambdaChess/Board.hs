@@ -70,18 +70,21 @@ instance ComonadStore Square Board where
 instance HasSquare (Board a) where
   square = lens pos (flip seek)
 
+-- | Directional move functions.
 sqUp, sqDown, sqLeft, sqRight :: Square -> Maybe Square
 sqUp    s = s&rank %%~ move . (+1) . fromEnum
 sqDown  s = s&rank %%~ move . subtract 1 . fromEnum
 sqLeft  s = s&file %%~ move . subtract 1 . fromEnum
 sqRight s = s&file %%~ move . (+1) . fromEnum
 
+-- | Converts integers into board coordinates.
 move :: Int -> Maybe Coord
 move c
   | c > fromEnum (maxBound @Coord) = Nothing
   | c < fromEnum (minBound @Coord) = Nothing
   | otherwise = Just $ toEnum c
 
+-- | Lens to selected board piece.
 bdSel :: Lens' (Board a) a
 bdSel = lens extract \(Board s board) a -> Board s
     $ board&singular (ix $ rk s).singular (ix $ fl s) .~ a
@@ -89,6 +92,7 @@ bdSel = lens extract \(Board s board) a -> Board s
   where rk s = fromEnum (s^.rank)
         fl s = fromEnum (s^.file)
 
+-- Converts board into a 2d list matrix.
 toGrid :: Board a -> [[a]]
 toGrid board = do
   rk <- [A ..]
@@ -97,9 +101,11 @@ toGrid board = do
     fl <- [A ..]
     pure $ peek (Square rk fl) board
 
+-- | Empty board.
 emptyChessboard :: Chessboard
 emptyChessboard = Board (Square A A) (V.replicate 8 $ V.replicate 8 Nothing)
 
+-- | Board with standard chess positions.
 standardChessboard :: Chessboard
 standardChessboard = extend pieces . extend pawns $ emptyChessboard
   where pieces board = case pos board of
