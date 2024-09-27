@@ -17,8 +17,8 @@
           ( haskPkgs.ghcWithPackages ( p: [
             p.haskell-language-server
             p.ghcid
-            p.cabal-install
           ]))
+          pkgs.cabal-install
         ];
       };
     };
