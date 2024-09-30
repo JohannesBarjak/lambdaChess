@@ -34,7 +34,7 @@ data Coord
   | G | H
   deriving (Eq, Ord, Enum, Bounded)
 
-data Player = White | Black
+data Player = White | Black deriving Eq
 
 data PlayerPiece = Piece
   { piece :: Piece

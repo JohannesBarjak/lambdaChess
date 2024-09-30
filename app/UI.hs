@@ -1,6 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE LambdaCase      #-}
-module UI where
+module UI
+  ( ChessGame
+  , newGame
+  , initialApp
+  ) where
 
 import Brick
 import Brick.Widgets.Center
@@ -9,11 +13,8 @@ import Brick.Widgets.Table
 import Control.Comonad.Store
 import Control.Lens
 import Control.Monad
-import Control.Arrow ((>>>))
 
 import Data.Char (toLower)
-import Data.Foldable (for_)
-
 import Graphics.Vty
 
 import LambdaChess
@@ -23,6 +24,7 @@ data ChessGame = ChessGame
   { _cursor :: Square
   , _board :: Chessboard
   , _selected :: Bool
+  , _turn :: Player
   }
 
 makeLenses ''ChessGame
@@ -32,6 +34,7 @@ newGame = ChessGame
   { _cursor = Square A A
   , _board = standardChessboard
   , _selected = False
+  , _turn = White
   }
 
 initialApp :: App ChessGame e ()
@@ -43,19 +46,21 @@ initialApp = App
   , appAttrMap = chessAttrMap
   }
 
+-- Main game pipeline.
 draw :: ChessGame -> [Widget n]
 draw gState =
-  [ vCenter . hCenter
-  $ renderWidgetBoard
-  $ highlightSelected (gState^.selected) (moves $ gState^.board)
-  $ highlightCursor (gState^.cursor)
-  $ colorCells
-  $ widgetBoard (gState^.board)
+  [ renderWidgetBoard
+  . highlightSelected (gState^.selected) (moves $ gState^.board)
+  . highlightCursor (gState^.cursor)
+  . colorCells
+  . widgetBoard $ gState^.board
   ]
 
+-- Final board image to draw.
 renderWidgetBoard :: Board (Widget n) -> Widget n
 renderWidgetBoard
-  = renderTable
+  = vCenter . hCenter
+  . renderTable
   . columnBorders False . rowBorders False
   . table . reverse . toGrid
 
@@ -78,13 +83,20 @@ handleEvent = \case
             board %= move cur
             selected .= False
 
-        else for_ (peek cur bd) . const $
-              unless (null $ moves (seek cur bd)) do
-                board %= seek cur
-                selected .= True
+        else do
+          tn <- use turn
+          when (let player = peek cur bd in Just tn == (col <$> player)) $
+            unless (null $ moves (seek cur bd)) do
+              board %= seek cur
+              selected .= True
+              turn .= notPlayer tn
 
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
+
+notPlayer :: Player -> Player
+notPlayer White = Black
+notPlayer Black = White
 
 highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
 highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
