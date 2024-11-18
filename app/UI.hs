@@ -85,7 +85,7 @@ handleEvent = \case
 
         else do
           tn <- use turn
-          when (let player = peek cur bd in Just tn == (col <$> player)) $
+          when (Just tn == (col <$> peek cur bd)) $
             unless (null $ moves (seek cur bd)) do
               board %= seek cur
               selected .= True
