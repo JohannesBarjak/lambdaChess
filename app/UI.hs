@@ -98,6 +98,7 @@ handleEvent = \case
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
 
+-- Invert chess color.
 notPlayer :: Player -> Player
 notPlayer White = Black
 notPlayer Black = White
@@ -105,12 +106,14 @@ notPlayer Black = White
 highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
 highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
 
+-- Add colors to the cells which a piece can move to.
 highlightSelected :: Bool -> [Square] -> Board (Widget n) -> Board (Widget n)
 highlightSelected False _  bd = bd
 highlightSelected True  ms bd
   = foldr (((bdSel %~ withAttr selectedAttr) .) . seek) bd ms
   & seek (pos bd)
 
+-- Add colors to the board.
 colorCells :: Board (Widget n) -> Board (Widget n)
 colorCells = extend colorSelected
 
@@ -120,6 +123,7 @@ colorCells = extend colorSelected
 
           where squareSum = fromEnum (bd^.square.file) + fromEnum (bd^.square.rank)
 
+-- Transform chess pieces into widgets.
 widgetBoard :: Chessboard -> Board (Widget n)
 widgetBoard = fmap
   $   maybe id (colorWidget . col)
