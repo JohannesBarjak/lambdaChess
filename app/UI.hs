@@ -14,6 +14,7 @@ import Control.Comonad.Store
 import Control.Lens
 import Control.Monad
 
+import Data.Bool (bool)
 import Data.Char (toLower)
 import Graphics.Vty
 
@@ -50,7 +51,7 @@ initialApp = App
 draw :: ChessGame -> [Widget n]
 draw gState =
   [ renderWidgetBoard
-  . highlightSelected (gState^.selected) (moves $ gState^.board)
+  . bool id (highlightSelected (moves $ gState^.board)) (gState^.selected)
   . highlightCursor (gState^.cursor)
   . colorCells
   . widgetBoard $ gState^.board
@@ -107,9 +108,8 @@ highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
 highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
 
 -- Add colors to the cells which a piece can move to.
-highlightSelected :: Bool -> [Square] -> Board (Widget n) -> Board (Widget n)
-highlightSelected False _  bd = bd
-highlightSelected True  ms bd
+highlightSelected :: [Square] -> Board (Widget n) -> Board (Widget n)
+highlightSelected ms bd
   = foldr (((bdSel %~ withAttr selectedAttr) .) . seek) bd ms
   & seek (pos bd)
 
