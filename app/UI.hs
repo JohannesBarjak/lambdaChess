@@ -77,19 +77,23 @@ handleEvent = \case
     KEnter -> do
       sel <- use selected
       cur <- use cursor
-      bd <- use board
 
-      if sel then when (cur `elem` moves bd) do
+      bd <- use board
+      tn <- use turn
+
+      if sel then do
+        when (cur `elem` moves bd) do
             board %= move cur
             selected .= False
+            turn .= notPlayer tn
 
-        else do
-          tn <- use turn
-          when (Just tn == (col <$> peek cur bd)) $
-            unless (null $ moves (seek cur bd)) do
-              board %= seek cur
-              selected .= True
-              turn .= notPlayer tn
+        when (cur == pos bd) do
+          selected .= False
+
+      else when (Just tn == (col <$> peek cur bd)) $
+          unless (null $ moves (seek cur bd)) do
+            board %= seek cur
+            selected .= True
 
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
