@@ -87,7 +87,7 @@ handleEvent = \case
         when (cur `elem` moves bd) do
             board %= move cur
             selected .= False
-            turn .= notPlayer tn
+            turn %= otherPlayer
 
         when (cur == pos bd) do
           selected .= False
@@ -101,9 +101,9 @@ handleEvent = \case
   _ -> continueWithoutRedraw
 
 -- Invert chess color.
-notPlayer :: Player -> Player
-notPlayer White = Black
-notPlayer Black = White
+otherPlayer :: Player -> Player
+otherPlayer White = Black
+otherPlayer Black = White
 
 highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
 highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
