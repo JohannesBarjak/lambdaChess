@@ -13,6 +13,7 @@ import Brick.Widgets.Table
 import Control.Comonad.Store
 import Control.Lens
 import Control.Monad
+import Data.Foldable (traverse_)
 
 import Data.Bool (bool)
 import Data.Char (toLower)
@@ -70,10 +71,10 @@ handleEvent = \case
   (VtyEvent (EvKey key _)) -> case key of
     KChar c | toLower c == 'q' -> halt
 
-    KUp -> maybe (pure ()) (cursor .=) . sqUp =<< use cursor
-    KDown -> maybe (pure ()) (cursor .=) . sqDown =<< use cursor
-    KLeft -> maybe (pure ()) (cursor .=) . sqLeft =<< use cursor
-    KRight -> maybe (pure ()) (cursor .=) . sqRight =<< use cursor
+    KUp    -> traverse_ (assign cursor) . sqUp =<< use cursor
+    KDown  -> traverse_ (assign cursor) . sqDown =<< use cursor
+    KLeft  -> traverse_ (assign cursor) . sqLeft =<< use cursor
+    KRight -> traverse_ (assign cursor) . sqRight =<< use cursor
 
     KEnter -> do
       sel <- use selected
