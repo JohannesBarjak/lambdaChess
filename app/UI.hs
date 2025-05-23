@@ -29,7 +29,7 @@ data ChessGame = ChessGame
   , _turn :: Player
   }
 
-makeLenses ''ChessGame
+makeClassy ''ChessGame
 
 newGame :: ChessGame
 newGame = ChessGame
