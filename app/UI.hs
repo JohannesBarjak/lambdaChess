@@ -13,6 +13,8 @@ import Brick.Widgets.Table
 import Control.Comonad.Store
 import Control.Lens
 import Control.Monad
+import Control.Monad.State.Strict
+
 import Data.Foldable (traverse_)
 
 import Data.Bool (bool)
@@ -71,10 +73,17 @@ handleEvent = \case
   (VtyEvent (EvKey key _)) -> case key of
     KChar c | toLower c == 'q' -> halt
 
-    KUp    -> traverse_ (assign cursor) . sqUp =<< use cursor
-    KDown  -> traverse_ (assign cursor) . sqDown =<< use cursor
-    KLeft  -> traverse_ (assign cursor) . sqLeft =<< use cursor
-    KRight -> traverse_ (assign cursor) . sqRight =<< use cursor
+    -- Vim style movement.
+    KChar c | toLower c == 'h' -> cursorMove sqUp
+    KChar c | toLower c == 'j' -> cursorMove sqDown
+    KChar c | toLower c == 'k' -> cursorMove sqUp
+    KChar c | toLower c == 'l' -> cursorMove sqRight
+
+    -- Also add movement using the arrow keys.
+    KUp    -> cursorMove sqUp
+    KDown  -> cursorMove sqDown
+    KLeft  -> cursorMove sqLeft
+    KRight -> cursorMove sqRight
 
     KEnter -> do
       sel <- use selected
@@ -99,6 +108,10 @@ handleEvent = \case
 
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
+
+-- Move the cursor according to the function given.
+cursorMove :: (MonadState s m, HasChessGame s, Foldable t) => (Square -> t Square) -> m ()
+cursorMove f = traverse_ (assign cursor) . f  =<< use cursor
 
 -- Invert chess color.
 otherPlayer :: Player -> Player
