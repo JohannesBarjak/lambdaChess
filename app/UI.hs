@@ -74,7 +74,7 @@ handleEvent = \case
     KChar c | toLower c == 'q' -> halt
 
     -- Vim style movement.
-    KChar c | toLower c == 'h' -> cursorMove sqUp
+    KChar c | toLower c == 'h' -> cursorMove sqLeft
     KChar c | toLower c == 'j' -> cursorMove sqDown
     KChar c | toLower c == 'k' -> cursorMove sqUp
     KChar c | toLower c == 'l' -> cursorMove sqRight
