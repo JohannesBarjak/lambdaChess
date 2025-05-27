@@ -86,9 +86,9 @@ handleEvent = \case
     KRight -> cursorMove sqRight
 
     KEnter -> do
-      cur   <- use cursor
       bd    <- use board
       color <- use turn
+      cur   <- use cursor
       sel   <- use selected
 
       -- Move when user chooses a valid move and then switch turn.
