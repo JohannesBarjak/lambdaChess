@@ -86,25 +86,25 @@ handleEvent = \case
     KRight -> cursorMove sqRight
 
     KEnter -> do
-      sel <- use selected
-      cur <- use cursor
+      cur   <- use cursor
+      bd    <- use board
+      color <- use turn
+      sel   <- use selected
 
-      bd <- use board
-      tn <- use turn
+      -- Move when user chooses a valid move and then switch turn.
+      when (sel && (cur `elem` moves bd)) do
+        board %= move cur
+        turn %= otherPlayer
 
-      if sel then do
-        when (cur `elem` moves bd) do
-            board %= move cur
-            selected .= False
-            turn %= otherPlayer
+      -- Check if the selected square has a friendly piece.
+      let isPlayerPiece = maybe False (\piece -> col piece == color) (peek cur bd)
 
-        when (cur == pos bd) do
-          selected .= False
+      -- Only select friendly pieces.
+      when isPlayerPiece $ board %= seek cur
+      selected .= isPlayerPiece
 
-      else when (Just tn == (col <$> peek cur bd)) $
-          unless (null $ moves (seek cur bd)) do
-            board %= seek cur
-            selected .= True
+    -- Escape selection.
+    KEsc -> selected .= False
 
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
