@@ -103,6 +103,9 @@ handleEvent = \case
       when isPlayerPiece $ board %= seek cur
       selected .= isPlayerPiece
 
+      -- Disable selection when pressing already selected piece.
+      when (sel && (cur == pos bd)) (assign selected False)
+
     -- Escape selection.
     KEsc -> selected .= False
 
