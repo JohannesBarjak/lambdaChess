@@ -39,7 +39,7 @@ data Player = White | Black deriving Eq
 data PlayerPiece = Piece
   { piece :: Piece
   , col :: Player
-  }
+  } deriving Eq
 
 data Piece
   = Queen
@@ -47,7 +47,7 @@ data Piece
   | Rook
   | Bishop
   | Knight
-  | Pawn
+  | Pawn deriving Eq
 
 type Chessboard = Board (Maybe PlayerPiece)
 
