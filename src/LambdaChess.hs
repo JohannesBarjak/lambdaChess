@@ -19,16 +19,13 @@ import LambdaChess.Board
 -- | Find valid moves for the currently focused piece.
 moves :: Chessboard -> [[Square]]
 moves bd = ($ pos bd) . flip (maybe (const [])) (extract bd) $ \case
-  (Piece Pawn White) -> fmap maybeToList . singleton . sqUp
-  (Piece Pawn Black) -> fmap maybeToList . singleton . sqDown
-  (Piece Bishop   _) -> expandLines diagonalMoves
-  (Piece Rook     _) -> do
-    extendedMoves <- expandLines straightMoves
-    pure $ filterHiddenPieces extendedMoves
-
-  (Piece Queen    _) -> expandLines (straightMoves <> diagonalMoves)
-  (Piece King     _) -> fmap maybeToList . sequence (straightMoves <> diagonalMoves)
-  (Piece Knight   _) -> fmap maybeToList . sequence knightMoves
+  (Piece Pawn White) -> filterHiddenPieces . fmap maybeToList . singleton . sqUp
+  (Piece Pawn Black) -> filterHiddenPieces . fmap maybeToList . singleton . sqDown
+  (Piece Bishop   _) -> filterHiddenPieces . expandLines diagonalMoves
+  (Piece Rook     _) -> filterHiddenPieces . expandLines straightMoves
+  (Piece Queen    _) -> filterHiddenPieces . expandLines (straightMoves <> diagonalMoves)
+  (Piece King     _) -> filterHiddenPieces . fmap maybeToList . sequence (straightMoves <> diagonalMoves)
+  (Piece Knight   _) -> filterHiddenPieces . fmap maybeToList . sequence knightMoves
 
   where
     filterHiddenPieces :: [[Square]] -> [[Square]]
