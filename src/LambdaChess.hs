@@ -10,31 +10,36 @@ import Control.Comonad.Store
 import Control.Lens
 import Control.Monad
 
-import Data.List (unfoldr, singleton)
-import Data.Maybe (catMaybes, isNothing, listToMaybe, maybeToList)
+import Data.List (unfoldr, singleton, sort)
+import Data.Maybe (isNothing, listToMaybe, maybeToList)
 import Data.Bool (bool)
 
 import LambdaChess.Board
 
-moves :: Chessboard -> [Square]
+       -- Find valid moves for the currently focused piece.
+moves :: Chessboard -> [[Square]]
 moves bd = ($ pos bd) . flip (maybe (const [])) (extract bd) $ \case
-  (Piece Pawn White) -> catMaybes . singleton . sqUp
-  (Piece Pawn Black) -> catMaybes . singleton . sqDown
-  (Piece Bishop   _) -> concat . expandLines diagonalMoves
+  (Piece Pawn White) -> fmap maybeToList . singleton . sqUp
+  (Piece Pawn Black) -> fmap maybeToList . singleton . sqDown
+  (Piece Bishop   _) -> expandLines diagonalMoves
   (Piece Rook     _) -> do
     extendedMoves <- expandLines straightMoves
+    pure $ filterHiddenPieces extendedMoves
 
-    pure do
-      (emptySquares, piece) <- map ((_2 %~ listToMaybe) . span isEmpty) extendedMoves
-
-      let isTarget = maybe False isRival piece
-      emptySquares ++ bool [] (maybeToList piece) isTarget
-
-  (Piece Queen    _) -> concat . expandLines (straightMoves <> diagonalMoves)
-  (Piece King     _) -> catMaybes . sequence (straightMoves <> diagonalMoves)
-  (Piece Knight   _) -> catMaybes . sequence knightMoves
+  (Piece Queen    _) -> expandLines (straightMoves <> diagonalMoves)
+  (Piece King     _) -> fmap maybeToList . sequence (straightMoves <> diagonalMoves)
+  (Piece Knight   _) -> fmap maybeToList . sequence knightMoves
 
   where
+    filterHiddenPieces :: [[Square]] -> [[Square]]
+    filterHiddenPieces moveList = do
+      -- Sort ensures correct behavior.
+      (emptySquares, piece) <- map ((_2 %~ listToMaybe) . span isEmpty) (sort moveList)
+
+      -- Can this piece be taken.
+      let isTarget = (bool (const Nothing) Just =<< isRival) =<< piece
+      pure $ maybe emptySquares (: emptySquares) isTarget
+
     extendLine f  = unfoldr (fmap (join (,)) . f) -- Extend move direction to board edges.
     expandLines   = mapM extendLine               -- Extend lines for every move direction.
 

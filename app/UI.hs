@@ -54,7 +54,7 @@ initialApp = App
 draw :: ChessGame -> [Widget n]
 draw gState =
   [ renderWidgetBoard
-  . bool id (highlightSelected (moves $ gState^.board)) (gState^.selected)
+  . bool id (highlightSelected (concat $ moves $ gState^.board)) (gState^.selected)
   . highlightCursor (gState^.cursor)
   . colorCells
   . widgetBoard $ gState^.board
@@ -92,7 +92,7 @@ handleEvent = \case
       sel   <- use selected
 
       -- Move when user chooses a valid move and then switch turn.
-      when (sel && (cur `elem` moves bd)) do
+      when (sel && (cur `elem` concat (moves bd))) do
         board %= move cur
         turn %= otherPlayer
 
