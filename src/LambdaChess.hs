@@ -16,7 +16,7 @@ import Data.Bool (bool)
 
 import LambdaChess.Board
 
-       -- Find valid moves for the currently focused piece.
+-- | Find valid moves for the currently focused piece.
 moves :: Chessboard -> [[Square]]
 moves bd = ($ pos bd) . flip (maybe (const [])) (extract bd) $ \case
   (Piece Pawn White) -> fmap maybeToList . singleton . sqUp

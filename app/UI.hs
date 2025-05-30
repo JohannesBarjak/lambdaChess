@@ -50,7 +50,7 @@ initialApp = App
   , appAttrMap = chessAttrMap
   }
 
--- Main game pipeline.
+-- | Main game pipeline.
 draw :: ChessGame -> [Widget n]
 draw gState =
   [ renderWidgetBoard
@@ -60,7 +60,7 @@ draw gState =
   . widgetBoard $ gState^.board
   ]
 
--- Final board image to draw.
+-- | Final board image to draw.
 renderWidgetBoard :: Board (Widget n) -> Widget n
 renderWidgetBoard
   = vCenter . hCenter
@@ -112,11 +112,11 @@ handleEvent = \case
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
 
--- Move the cursor according to the function given.
+-- | Move the cursor according to the function given.
 cursorMove :: (MonadState s m, HasChessGame s, Foldable t) => (Square -> t Square) -> m ()
 cursorMove f = traverse_ (assign cursor) . f  =<< use cursor
 
--- Invert chess color.
+-- | Invert player chess color.
 otherPlayer :: Player -> Player
 otherPlayer White = Black
 otherPlayer Black = White
@@ -124,13 +124,13 @@ otherPlayer Black = White
 highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
 highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
 
--- Add colors to the cells which a piece can move to.
 highlightSelected :: [Square] -> Board (Widget n) -> Board (Widget n)
 highlightSelected ms bd
+-- | Add move colors to the cells which a piece can move to.
   = foldr (((bdSel %~ withAttr selectedAttr) .) . seek) bd ms
   & seek (pos bd)
 
--- Add colors to the board.
+-- | Add alternating colors to the board.
 colorCells :: Board (Widget n) -> Board (Widget n)
 colorCells = extend colorSelected
 
@@ -140,7 +140,7 @@ colorCells = extend colorSelected
 
           where squareSum = fromEnum (bd^.square.file) + fromEnum (bd^.square.rank)
 
--- Transform chess pieces into widgets.
+-- | Transform chess pieces into widgets.
 widgetBoard :: Chessboard -> Board (Widget n)
 widgetBoard = fmap
   $   maybe id (colorWidget . col)
