@@ -54,7 +54,7 @@ initialApp = App
 draw :: ChessGame -> [Widget n]
 draw gState =
   [ renderWidgetBoard
-  . bool id (highlightSelected (concat $ moves $ gState^.board)) (gState^.selected)
+  . bool id (highlightMoves (concat $ moves $ gState^.board)) (gState^.selected)
   . highlightCursor (gState^.cursor)
   . colorCells
   . widgetBoard $ gState^.board
@@ -124,9 +124,9 @@ otherPlayer Black = White
 highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
 highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
 
-highlightSelected :: [Square] -> Board (Widget n) -> Board (Widget n)
-highlightSelected ms bd
 -- | Add move colors to the cells which a piece can move to.
+highlightMoves :: [Square] -> Board (Widget n) -> Board (Widget n)
+highlightMoves ms bd
   = foldr (((bdSel %~ withAttr selectedAttr) .) . seek) bd ms
   & seek (pos bd)
 
