@@ -135,8 +135,11 @@ colorCells :: Board (Widget n) -> Board (Widget n)
 colorCells = extend colorSelected
 
   where colorSelected bd
-          | even squareSum = modifyDefAttr (`withBackColor` rgbColor @Integer 80 80 80) (extract bd)
-          | otherwise = modifyDefAttr (`withBackColor` rgbColor @Integer 210 210 210) (extract bd)
+          | even squareSum = modifyDefAttr
+                             (`withBackColor` rgbColor @Integer 80 80 80) (extract bd)
+
+          | otherwise      = modifyDefAttr
+                             (`withBackColor` rgbColor @Integer 210 210 210) (extract bd)
 
           where squareSum = fromEnum (bd^.square.file) + fromEnum (bd^.square.rank)
 
@@ -153,8 +156,10 @@ widgetBoard = fmap
         toWidget Bishop = bishopWidget
         toWidget Knight = knightWidget
 
-        colorWidget White = modifyDefAttr (flip withStyle bold . (`withForeColor` rgbColor @Integer 255 255 255))
-        colorWidget Black = modifyDefAttr (flip withStyle bold . (`withForeColor` rgbColor @Integer 0 0 0))
+        colorWidget White = modifyDefAttr
+          (flip withStyle bold . (`withForeColor` rgbColor @Integer 255 255 255))
+        colorWidget Black = modifyDefAttr
+          (flip withStyle bold . (`withForeColor` rgbColor @Integer 0 0 0))
 
 chessAttrMap :: ChessGame -> AttrMap
 chessAttrMap = const $ attrMap defAttr
