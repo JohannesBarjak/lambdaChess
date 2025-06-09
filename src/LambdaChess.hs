@@ -44,6 +44,7 @@ moves bd = ($ pos bd) . flip (maybe (const [])) (extract bd) $ \case
     isRival rival = (col <$> extract bd) /= (col <$> peek rival bd) -- Check if the given square is of the same colour.
 
     -- Basic move directions.
+    diagonalMoves, straightMoves, knightMoves :: [Square -> Maybe Square]
     diagonalMoves = [sqUp >=> sqRight, sqUp >=> sqLeft, sqDown >=> sqRight, sqDown >=> sqLeft]
     straightMoves = [sqUp, sqDown, sqLeft, sqRight]
 
