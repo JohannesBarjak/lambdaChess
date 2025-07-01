@@ -1,0 +1,12 @@
+* TUI Haskell Chess
+This is a simple tui chess game and
+it uses the Brick library to render the board on the terminal.
+
+* Installation
+You can install the game like any other haskell program,
+or download the repository and run it with `cabal run`.
+
+** Nix
+This repository has a nix flake, so you can use it to get a reproducible build
+with `nix develop`.
+
