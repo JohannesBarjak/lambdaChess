@@ -18,16 +18,18 @@ import LambdaChess.Board
 
 -- | Find valid moves for the currently focused piece.
 moves :: Chessboard -> [[Square]]
-moves bd = ($ pos bd) . flip (maybe (const [])) (extract bd) $ \case
-  (Piece Pawn White) -> filterHiddenPieces . fmap maybeToList . singleton . sqUp
-  (Piece Pawn Black) -> filterHiddenPieces . fmap maybeToList . singleton . sqDown
-  (Piece Bishop   _) -> filterHiddenPieces . expandLines diagonalMoves
-  (Piece Rook     _) -> filterHiddenPieces . expandLines straightMoves
-  (Piece Queen    _) -> filterHiddenPieces . expandLines (straightMoves <> diagonalMoves)
-  (Piece King     _) -> filterHiddenPieces . fmap maybeToList . sequence (straightMoves <> diagonalMoves)
-  (Piece Knight   _) -> filterHiddenPieces . fmap maybeToList . sequence knightMoves
+moves bd = filterHiddenPieces . ($ pos bd) $ maybe (const []) constructMoves (extract bd)
 
   where
+    constructMoves :: PlayerPiece -> Square -> [[Square]]
+    constructMoves (Piece Pawn White) = fmap maybeToList . singleton .  sqUp
+    constructMoves (Piece Pawn Black) = fmap maybeToList . singleton . sqDown
+    constructMoves (Piece Bishop   _) = expandLines diagonalMoves
+    constructMoves (Piece Rook     _) = expandLines straightMoves
+    constructMoves (Piece Queen    _) = expandLines (straightMoves <> diagonalMoves)
+    constructMoves (Piece King     _) = fmap maybeToList . sequence (straightMoves <> diagonalMoves)
+    constructMoves (Piece Knight   _) = fmap maybeToList . sequence knightMoves
+
     filterHiddenPieces :: [[Square]] -> [[Square]]
     filterHiddenPieces moveList = do
       -- Sort ensures correct behavior.
@@ -35,6 +37,7 @@ moves bd = ($ pos bd) . flip (maybe (const [])) (extract bd) $ \case
 
       -- Can this piece be taken.
       let isTarget = (bool (const Nothing) Just =<< isRival) =<< piece
+
       pure $ maybe emptySquares (: emptySquares) isTarget
 
     extendLine f  = unfoldr (fmap (join (,)) . f) -- Extend move direction to board edges.
