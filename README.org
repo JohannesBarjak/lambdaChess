@@ -1,6 +1,6 @@
 * TUI Haskell Chess
-This is a simple TUI chess game and
-it uses the Brick library to render the board on the terminal.
+This is a simple TUI chess game
+that uses the Brick library to render the board on the terminal.
 
 * Installation
 You can install the game like any other haskell program,
