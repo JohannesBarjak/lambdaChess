@@ -97,7 +97,7 @@ handleEvent = \case
         turn %= otherPlayer
 
       -- Check if the selected square has a friendly piece.
-      let isPlayerPiece = maybe False (\piece -> col piece == color) (peek cur bd)
+      let isPlayerPiece = maybe False ((== color) . col) (peek cur bd)
 
       -- Only select friendly pieces.
       when isPlayerPiece $ board %= seek cur
