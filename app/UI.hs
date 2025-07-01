@@ -92,6 +92,7 @@ handleEvent = \case
       sel   <- use selected
 
       -- Move when user chooses a valid move and then switch turn.
+      -- TODO: Decouple turn system from user moves for future chess Ai.
       when (sel && (cur `elem` concat (moves bd))) do
         board %= move cur
         turn %= otherPlayer
