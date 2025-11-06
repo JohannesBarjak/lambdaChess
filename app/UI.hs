@@ -91,13 +91,12 @@ handleEvent = \case
       cur   <- use cursor
       sel   <- use selected
 
-      -- Move when user chooses a valid move and then switch turn.
-      -- TODO: Decouple turn system from user moves for future chess Ai.
+      -- Move when user chooses a valid move and then switch player.
       when (sel && (cur `elem` concat (moves bd))) do
         board %= move cur
         turn %= otherPlayer
 
-      -- Check if the selected square has a friendly piece.
+      -- Check if the selected square is of the same color as the current player.
       let isPlayerPiece = maybe False ((== color) . col) (peek cur bd)
 
       -- Only select friendly pieces.
