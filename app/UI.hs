@@ -12,8 +12,8 @@ import Brick.Widgets.Table
 
 import Control.Comonad.Store
 import Control.Lens
-import Control.Monad
 import Control.Monad.State.Strict
+import Control.Arrow
 
 import Data.Foldable (traverse_)
 
@@ -23,6 +23,7 @@ import Graphics.Vty
 
 import LambdaChess
 import LambdaChess.Board
+import LambdaChess.Utils
 
 data ChessGame = ChessGame
   { _cursor :: Square
@@ -54,7 +55,7 @@ initialApp = App
 draw :: ChessGame -> [Widget n]
 draw gState =
   [ renderWidgetBoard
-  . bool id (highlightMoves (concat $ moves $ gState^.board)) (gState^.selected)
+  . (bool id <$> highlightMoves . concat . moves . (^.board) <*> (^.selected) $ gState)
   . highlightCursor (gState^.cursor)
   . colorCells
   . widgetBoard $ gState^.board
@@ -85,36 +86,41 @@ handleEvent = \case
     KLeft  -> cursorMove sqLeft
     KRight -> cursorMove sqRight
 
-    KEnter -> do
-      bd    <- use board
-      color <- use turn
-      cur   <- use cursor
-      sel   <- use selected
-
-      -- Move when user chooses a valid move and then switch player.
-      when (sel && (cur `elem` concat (moves bd))) do
-        board %= move cur
-        turn %= otherPlayer
-
-      -- Check if the selected square is of the same color as the current player.
-      let isPlayerPiece = maybe False ((== color) . col) (peek cur bd)
-
-      -- Only select friendly pieces.
-      when isPlayerPiece $ board %= seek cur
-      selected .= isPlayerPiece
-
-      -- Disable selection when pressing already selected piece.
-      when (sel && (cur == pos bd)) (assign selected False)
-
+    KEnter -> manageBoard
     -- Escape selection.
     KEsc -> selected .= False
 
     _ -> continueWithoutRedraw
   _ -> continueWithoutRedraw
 
+manageBoard :: EventM n ChessGame ()
+manageBoard = do
+  sel   <- use selected
+  bd    <- use board
+  ptr   <- use cursor
+  color <- use turn
+
+  -- Check if the selected square is of the same color as the current player
+  let isPlayer = player color ptr bd
+
+  -- Move when user chooses a valid move and then switch player.
+  let isValidMove = validMove sel ptr bd
+
+  turn  %= updateIf isValidMove otherPlayer
+  board %= updateIf isPlayer (seek ptr)
+  board %= updateIf isValidMove (move ptr)
+
+  -- Only select friendly pieces.
+  -- Disable selection when pressing already selected piece.
+  selected .= bool isPlayer False (sel && ptr == pos bd)
+
+  where player    = (.: peek) . maybe False . ((==) .^ col)
+        updateIf  = flip $ bool id
+        validMove = (.: (. concat . moves) . elem) . (&&)
+
 -- | Move the cursor according to the function given.
 cursorMove :: (MonadState s m, HasChessGame s, Foldable t) => (Square -> t Square) -> m ()
-cursorMove f = traverse_ (assign cursor) . f  =<< use cursor
+cursorMove = (use cursor >>=) . (traverse_ (assign cursor) .)
 
 -- | Invert player chess color.
 otherPlayer :: Player -> Player
@@ -122,24 +128,19 @@ otherPlayer White = Black
 otherPlayer Black = White
 
 highlightCursor :: Square -> Board (Widget n) -> Board (Widget n)
-highlightCursor cur bd = seek cur bd&bdSel %~ withAttr cursorAttr
+highlightCursor = over bdSel (withAttr cursorAttr) .: seek
 
 -- | Add move colors to the cells which a piece can move to.
 highlightMoves :: [Square] -> Board (Widget n) -> Board (Widget n)
-highlightMoves ms bd
-  = foldr (((bdSel %~ withAttr selectedAttr) .) . seek) bd ms
-  & seek (pos bd)
+highlightMoves = (seek . pos <*>) . flip (foldr $ over bdSel (withAttr selectedAttr) .: seek)
 
 -- | Add alternating colors to the board.
 colorCells :: Board (Widget n) -> Board (Widget n)
 colorCells = extend colorSelected
 
   where colorSelected bd
-          | even squareSum = modifyDefAttr
-                             (`withBackColor` rgbColor @Integer 80 80 80) (extract bd)
-
-          | otherwise      = modifyDefAttr
-                             (`withBackColor` rgbColor @Integer 210 210 210) (extract bd)
+          | even squareSum = modifyDefAttr (`withBackColor` rgbColor @Integer 80 80 80) (extract bd)
+          | otherwise      = modifyDefAttr (`withBackColor` rgbColor @Integer 210 210 210) (extract bd)
 
           where squareSum = fromEnum (bd^.square.file) + fromEnum (bd^.square.rank)
 
