@@ -21,6 +21,8 @@ import Control.Lens
 import Data.Vector (Vector)
 import Data.Vector qualified as V
 
+import LambdaChess.Utils
+
 data Board a = Board Square (Vector (Vector a))
   deriving (Functor, Foldable, Traversable)
 
@@ -52,16 +54,15 @@ data Piece
 type Chessboard = Board (Maybe PlayerPiece)
 
 makeClassy ''Square
+makeClassyPrisms ''Piece
+makeClassyPrisms ''Player
+makeClassyPrisms ''Coord
 
 instance Comonad Board where
   extract (Board s board) = board V.! fromEnum (s^.rank) V.! fromEnum (s^.file)
 
   extend f (Board position board)
-    = Board position do
-      rk <- [A ..]
-      pure do
-        fl <- [A ..]
-        pure $ f (Board (Square rk fl) board)
+    = Board position $ (f . (`Board` board)) .: ((<$> [A ..]) . Square <$> [A ..])
 
 instance ComonadStore Square Board where
   pos (Board s _) = s
@@ -72,10 +73,10 @@ instance HasSquare (Board a) where
 
 -- | Directional move functions.
 sqUp, sqDown, sqLeft, sqRight :: Square -> Maybe Square
-sqUp    s = s&rank %%~ move . (+1) . fromEnum
-sqDown  s = s&rank %%~ move . subtract 1 . fromEnum
-sqLeft  s = s&file %%~ move . subtract 1 . fromEnum
-sqRight s = s&file %%~ move . (+1) . fromEnum
+sqUp    = rank %%~ move . (+1) . fromEnum
+sqDown  = rank %%~ move . subtract 1 . fromEnum
+sqLeft  = file %%~ move . subtract 1 . fromEnum
+sqRight = file %%~ move . (+1) . fromEnum
 
 -- | Converts integers into board coordinates.
 move :: Int -> Maybe Coord
@@ -89,21 +90,16 @@ bdSel :: Lens' (Board a) a
 bdSel = lens extract \(Board s board) a -> Board s
     $ board&singular (ix $ rk s).singular (ix $ fl s) .~ a
 
-  where rk s = fromEnum (s^.rank)
-        fl s = fromEnum (s^.file)
+  where rk = fromEnum . (^.rank)
+        fl = fromEnum . (^.file)
 
 -- Converts board into a 2d list matrix.
 toGrid :: Board a -> [[a]]
-toGrid board = do
-  rk <- [A ..]
-
-  pure do
-    fl <- [A ..]
-    pure $ peek (Square rk fl) board
+toGrid board = (`peek` board) .: ((<$> [A ..]) . Square) <$> [A ..]
 
 -- | Empty board.
 emptyChessboard :: Chessboard
-emptyChessboard = Board (Square A A) (V.replicate 8 $ V.replicate 8 Nothing)
+emptyChessboard = Board (Square A A) (V.replicate 8 . V.replicate 8 $ Nothing)
 
 -- | Board with standard chess positions.
 standardChessboard :: Chessboard
@@ -114,12 +110,12 @@ standardChessboard = extend pieces . extend pawns $ emptyChessboard
             _ -> view bdSel board
 
         pawns board = case pos board of
-            (Square B _) -> Just (Piece Pawn White)
-            (Square G _) -> Just (Piece Pawn Black)
+            (Square B _) -> Just $ Piece Pawn White
+            (Square G _) -> Just $ Piece Pawn Black
             _ -> view bdSel board
 
         pieceList col
-          = map (`Piece` col)
+          = flip Piece col <$>
             [ Rook, Knight, Bishop
             , Queen, King
             , Bishop, Knight, Rook

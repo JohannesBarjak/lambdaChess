@@ -7,3 +7,7 @@ module LambdaChess.Utils where
 -- | Apply function to second argument of binary function.
 (.^) :: (Functor f) => f (b -> c) -> (a -> b) -> f (a -> c)
 (.^) = (. flip (.)) . flip fmap
+
+-- | Applicative composition.
+(<*<) :: (Applicative f) => f (b -> c) -> f (a -> b) -> f (a -> c)
+(<*<) = liftA2 (.)

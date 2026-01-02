@@ -13,7 +13,6 @@ import Brick.Widgets.Table
 import Control.Comonad.Store
 import Control.Lens
 import Control.Monad.State.Strict
-import Control.Arrow
 
 import Data.Foldable (traverse_)
 
